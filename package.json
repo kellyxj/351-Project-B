@@ -1,0 +1,26 @@
+{
+  "name": "351-project-b",
+  "version": "1.0.0",
+  "description": "",
+  "main": "BasicShapesCam.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kellyxj/351-Project-B.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kellyxj/351-Project-B/issues"
+  },
+  "homepage": "https://github.com/kellyxj/351-Project-B#readme",
+  "dependencies": {
+    "browserify": "^17.0.0",
+    "glslify": "^7.1.1"
+  },
+  "browserify": {
+    "transform": ["glslify"]
+  }
+}
