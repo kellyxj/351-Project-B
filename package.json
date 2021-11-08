@@ -21,6 +21,8 @@
     "glslify": "^7.1.1"
   },
   "browserify": {
-    "transform": ["glslify"]
+    "transform": [
+      "glslify"
+    ]
   }
 }

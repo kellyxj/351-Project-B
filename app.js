@@ -1,3 +1,4 @@
+(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 //3456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_
 // (JT: why the numbers? counts columns, helps me keep 80-char-wide listings)
 //
@@ -16,29 +17,11 @@
 //			to build a cylinder, sphere, and torus.
 //
 // Vertex shader program----------------------------------
-var VSHADER_SOURCE = 
-  'uniform mat4 u_ModelMatrix;\n' +
-  'uniform vec2 u_shiver;\n' +
-  'attribute vec4 a_Position;\n' +
-  'attribute vec4 a_Color;\n' +
-  'varying vec4 v_Color;\n' +
-  'void main() {\n' +
-  '  float myWave = u_shiver.x * sin( 2.0 * a_Position.y + u_shiver.y);\n' +
-  '  vec4 temp = vec4(myWave, myWave, 0, 0);\n' +
-  '  gl_Position = u_ModelMatrix * (a_Position + temp);\n' +
-  '  gl_PointSize = 10.0;\n' +
-  '  v_Color = a_Color;\n' +
-  '}\n';
+var glsl = require("glslify");
+var VSHADER_SOURCE = glsl(["#define GLSLIFY 1\nuniform mat4 u_ModelMatrix;\n  uniform vec2 u_shiver;\n  attribute vec4 a_Position;\n  attribute vec4 a_Color;\n  varying vec4 v_Color;\n  void main() {\n    float myWave = u_shiver.x * sin( 2.0 * a_Position.y + u_shiver.y);\n    vec4 temp = vec4(myWave, myWave, 0, 0);\n    gl_Position = u_ModelMatrix * (a_Position + temp);\n    gl_PointSize = 10.0;\n    v_Color = a_Color;\n}"]);
 
 // Fragment shader program----------------------------------
-var FSHADER_SOURCE = 
-//  '#ifdef GL_ES\n' +
-  'precision mediump float;\n' +
-//  '#endif GL_ES\n' +
-  'varying vec4 v_Color;\n' +
-  'void main() {\n' +
-  '  gl_FragColor = v_Color;\n' +
-  '}\n';
+var FSHADER_SOURCE = glsl(["//  #ifdef GL_ES\nprecision mediump float;\n#define GLSLIFY 1\n//  #endif GL_ES \n  varying vec4 v_Color;\n  void main() {\n    gl_FragColor = v_Color;\n  }"]);
 
 // Global Variables
 var ANGLE_STEP = 45.0;		// Rotation angle rate (degrees/second)
@@ -756,3 +739,16 @@ function runStop() {
   }
 }
  
+},{"glslify":2}],2:[function(require,module,exports){
+module.exports = function(strings) {
+  if (typeof strings === 'string') strings = [strings]
+  var exprs = [].slice.call(arguments,1)
+  var parts = []
+  for (var i = 0; i < strings.length-1; i++) {
+    parts.push(strings[i], exprs[i] || '')
+  }
+  parts.push(strings[i])
+  return parts.join('')
+}
+
+},{}]},{},[1]);
