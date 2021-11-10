@@ -32,7 +32,9 @@ var floatsPerVertex = 7;	// # of Float32Array elements used for each vertex
 //globals for camera control
 panAngle = 0;
 tiltAngle = 0;
-eyePosition = [-5, 0, 0.5]
+eyePosition = [-5, 0, 0.5];
+cylVertsMulti = [];
+boxRotate = 0;
 
 var inverted = false;	//controls look inversion
 
@@ -252,11 +254,15 @@ function initVertexBuffer(gl) {
 // shapes.
  
  	// Make each 3D shape in its own array of vertices:
-	makeCylinder();
+	makeCylinder(16, 1.1, [0.2, 0.2, 0.2], [0.4, 0.7, 0.4], [0.5, 0.5, 1.0]);
+	makeCylinder(4, 1, [.75, .9, .4], [.3, .8, .8], [.1, .9, .67]);
 	makeCone();
   	makeGroundGrid();				// create, fill the gndVerts array
   // how many floats total needed to store all shapes?
-	var mySiz = (cylVerts.length +coneVerts.length + gndVerts.length);						
+	var mySiz = (coneVerts.length + gndVerts.length);
+	cylVertsMulti.forEach((cylVert) => {
+		mySiz += cylVert.length;
+	})
 
 	// How many vertices total?
 	var nn = mySiz / floatsPerVertex;
@@ -264,9 +270,13 @@ function initVertexBuffer(gl) {
 	// Copy all shapes into one big Float32 array:
   	var colorShapes = new Float32Array(mySiz);
 	// Copy them:  remember where to start for each shape:
-	cylStart = 0;							// we stored the cylinder first.
-  	for(i=0,j=0; j< cylVerts.length; i++,j++) {
-  		colorShapes[i] = cylVerts[j];
+	cylStart0 = 0;							// we stored the cylinder first.
+  	for(i=0,j=0; j< cylVertsMulti[0].length; i++,j++) {
+  		colorShapes[i] = cylVertsMulti[0][j];
+	}
+	cylStart1 = i;
+	for(j = 0; j < cylVertsMulti[1].length; i++, j++) {
+		colorShapes[i] = cylVertsMulti[1][j]
 	}
 	coneStart = i;
 	for(j = 0; j < coneVerts.length; i++, j++) {
@@ -396,20 +406,20 @@ function makePyramid() {
 }
 
 
-function makeCylinder() {
+function makeCylinder(n, radius, centerColor, topColor, bottomColor) {
 //==============================================================================
 // Make a cylinder shape from one TRIANGLE_STRIP drawing primitive, using the
 // 'stepped spiral' design described in notes.
 // Cylinder center at origin, encircles z axis, radius 1, top/bottom at z= +/-1.
 //
- var ctrColr = new Float32Array([0.2, 0.2, 0.2]);	// dark gray
- var topColr = new Float32Array([0.4, 0.7, 0.4]);	// light green
- var botColr = new Float32Array([0.5, 0.5, 1.0]);	// light blue
- var capVerts = 16;	// # of vertices around the topmost 'cap' of the shape
- var botRadius = 1.1;		// radius of bottom of cylinder (top always 1.0)
+ var ctrColr = new Float32Array([centerColor[0], centerColor[1], centerColor[2]]);	// dark gray
+ var topColr = new Float32Array([topColor[0], topColor[1], topColor[2]]);	// light green
+ var botColr = new Float32Array([bottomColor[0], bottomColor[1], bottomColor[2]]);	// light blue
+ var capVerts = n;	// # of vertices around the topmost 'cap' of the shape
+ var botRadius = radius;		// radius of bottom of cylinder (top always 1.0)
  
  // Create a (global) array to hold this cylinder's vertices;
- cylVerts = new Float32Array(  ((capVerts*6) -2) * floatsPerVertex);
+ var cylVerts = new Float32Array(  ((capVerts*6) -2) * floatsPerVertex);
 										// # of vertices * # of elements needed to store them. 
 
 	// Create circle-shaped top cap of cylinder at z=+1.0, radius 1.0
@@ -490,6 +500,7 @@ function makeCylinder() {
 			cylVerts[j+6]=botColr[2];
 		}
 	}
+	cylVertsMulti.push(cylVerts);
 }
 
 function makeGroundGrid() {
@@ -601,8 +612,8 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
     	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
     	// Draw the cylinder's vertices, and no other vertices:
     	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
-    							cylStart/floatsPerVertex, // start at this vertex number, and
-    							cylVerts.length/floatsPerVertex);	// draw this many vertices.
+    							cylStart0/floatsPerVertex, // start at this vertex number, and
+    							cylVertsMulti[0].length/floatsPerVertex);	// draw this many vertices.
 	modelMatrix = popMatrix();
 	modelMatrix.scale(.9,.9,.9);
 	pushMatrix(modelMatrix);
@@ -612,8 +623,8 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
 		modelMatrix.translate(0, 0, 1);
 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 		gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
-			cylStart/floatsPerVertex, // start at this vertex number, and
-			cylVerts.length/floatsPerVertex);	// draw this many vertices.
+			cylStart0/floatsPerVertex, // start at this vertex number, and
+			cylVertsMulti[0].length/floatsPerVertex);	// draw this many vertices.
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
 		modelMatrix.translate(0,0,1);
@@ -622,8 +633,8 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
 		modelMatrix.translate(0, 0, 1);
 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 		gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
-			cylStart/floatsPerVertex, // start at this vertex number, and
-			cylVerts.length/floatsPerVertex);	// draw this many vertices.
+			cylStart0/floatsPerVertex, // start at this vertex number, and
+			cylVertsMulti[0].length/floatsPerVertex);	// draw this many vertices.
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
 		modelMatrix.translate(0,0,1);
@@ -632,12 +643,36 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
 		modelMatrix.translate(0, 0, 1);
 		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 		gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
-			cylStart/floatsPerVertex, // start at this vertex number, and
-			cylVerts.length/floatsPerVertex);	// draw this many vertices.
+			cylStart0/floatsPerVertex, // start at this vertex number, and
+			cylVertsMulti[0].length/floatsPerVertex);	// draw this many vertices.
 	modelMatrix = popMatrix();
   modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
-
+  startPositions = [2,3,0, -2,0,0, -1,-1,0, 5, -1, 0]
+  frequencies = [1, 1.71, 0.83, 2.6]
+  phases = [0, 30, -30, 90];
+  amplitudes = [5, 13, 8, 3]
+  for(i = 0; i < startPositions.length; i+=3) {
+	pushMatrix(modelMatrix);
+	modelMatrix.translate(startPositions[i], startPositions[i+1], startPositions[i+2]);
+	modelMatrix.scale(.1, .1, .1);
+	modelMatrix.translate(-1, 0, 1);
+	modelMatrix.rotate(90, 0, 1, 0);
+	modelMatrix.translate(0, amplitudes[i/3]*Math.cos((boxRotate+phases[i/3])*frequencies[i/3]), amplitudes[i/3]*Math.sin((boxRotate+phases[i/3])*frequencies[i/3]));
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+		gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+			cylStart1/floatsPerVertex, // start at this vertex number, and
+			cylVertsMulti[1].length/floatsPerVertex);	// draw this many vertices.
+  	modelMatrix = popMatrix();
+  }
+  pushMatrix(modelMatrix);
+  	modelMatrix.scale(.2, .2, .2);
+	modelMatrix.translate(4*eyePosition[0]+1, 4*eyePosition[1], 4*eyePosition[2]-1);
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+		//gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+		//	coneStart/floatsPerVertex, // start at this vertex number, and
+		//	coneVerts.length/floatsPerVertex);	// draw this many vertices.
+  modelMatrix = popMatrix();
 
   //===========================================================
   pushMatrix(modelMatrix);  // SAVE world drawing coords.
@@ -680,6 +715,7 @@ function animate(angle) {
 //  if(angle < -120.0 && ANGLE_STEP < 0) ANGLE_STEP = -ANGLE_STEP;
   
   var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
+  boxRotate = (boxRotate + elapsed/1000) % 360;
 
   return newAngle %= 360;
 }
