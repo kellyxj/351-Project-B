@@ -45,6 +45,10 @@ g_yMclik = 0.0;
 g_xMdragTot=0.0;
 g_yMdragTot=0.0; 
 
+qNew = new Quaternion(0,0,0,1);
+qTot = new Quaternion(0,0,0,1);
+quatMatrix = new Matrix4();
+
 function main() {
 //==============================================================================
   // Retrieve <canvas> element
@@ -278,6 +282,8 @@ function main() {
 	g_xMdragTot += (x - g_xMclik);			// Accumulate change-in-mouse-position,&
 	g_yMdragTot += (y - g_yMclik);
 
+	dragQuat(x - g_xMclik, y - g_yMclik);
+
 	g_xMclik = x;											// Make next drag-measurement from here.
 	g_yMclik = y;
 	console.log(x, y);
@@ -296,6 +302,8 @@ function main() {
 	  // accumulate any final bit of mouse-dragging we did:
 	  g_xMdragTot += (x - g_xMclik);
 	  g_yMdragTot += (y - g_yMclik);
+
+	  dragQuat(x - g_xMclik, y - g_yMclik);
   })
 
   var mvpMatrix = new Matrix4();
@@ -669,8 +677,10 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
     	//-------Draw Spinning Cylinder:
     modelMatrix.scale(0.2, 0.2, 0.2);
 	modelMatrix.translate(0, 0, 1);
-	var dist = Math.sqrt(g_xMdragTot*g_xMdragTot + g_yMdragTot*g_yMdragTot);
-	modelMatrix.rotate(dist*120.0, 0.0, -g_yMdragTot+0.0001, -g_xMdragTot+0.0001);
+
+	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);
+
+	modelMatrix.concat(quatMatrix);	
 	pushMatrix(modelMatrix);
 		modelMatrix.scale(.2, .2, 1);
     	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
@@ -807,6 +817,24 @@ function runStop() {
   	ANGLE_STEP = myTmp;
   }
 }
+
+function dragQuat(xdrag, ydrag) {
+		var qTmp = new Quaternion(0,0,0,1);
+		
+		var dist = Math.sqrt(xdrag*xdrag + ydrag*ydrag);
+		if(!inverted) {
+			qNew.setFromAxisAngle((-ydrag + 0.0001)*Math.sin(Math.PI*panAngle/180),
+			(-ydrag + 0.0001)*Math.cos(Math.PI*panAngle/180),
+			(-xdrag + 0.0001), dist*150.0);
+		}
+		else {
+			qNew.setFromAxisAngle((ydrag + 0.0001)*Math.sin(Math.PI*panAngle/180),
+			(ydrag + 0.0001)*Math.cos(Math.PI*panAngle/180),
+			(xdrag + 0.0001), dist*150.0);
+		}						
+		qTmp.multiply(qNew,qTot);
+		qTot.copy(qTmp);
+	};
 
 main();
 },{"glslify":2}],2:[function(require,module,exports){
