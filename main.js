@@ -35,8 +35,14 @@ tiltAngle = 0;
 eyePosition = [-5, 0, 0.5];
 cylVertsMulti = [];
 boxRotate = 0;
-
 var inverted = false;	//controls look inversion
+
+//globals for mouse drag interaction
+g_isDrag = false;											
+g_xMclik = 0.0;													
+g_yMclik = 0.0;
+g_xMdragTot=0.0;
+g_yMdragTot=0.0; 
 
 function main() {
 //==============================================================================
@@ -230,6 +236,65 @@ function main() {
 		console.log(panAngle);
 
 	}
+  })
+
+  //adding mouse drag interaction
+  document.addEventListener("mousedown", (ev) => {
+	var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
+  	var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
+  	var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+//  console.log('myMouseDown(pixel coords): xp,yp=\t',xp,',\t',yp);
+  
+	// Convert to Canonical View Volume (CVV) coordinates too:
+  	var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+  						 (canvas.width/2);			// normalize canvas to -1 <= x < +1,
+	var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
+							 (canvas.height/2);
+//	console.log('myMouseDown(CVV coords  ):  x, y=\t',x,',\t',y);
+	
+	g_isDrag = true;											// set our mouse-dragging flag
+	g_xMclik = x;													// record where mouse-dragging began
+	g_yMclik = y;
+	console.log(x,y);
+  })
+  document.addEventListener("mousemove", (ev) => {
+	if(g_isDrag==false) return;				// IGNORE all mouse-moves except 'dragging'
+
+	// Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
+  	var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
+  	var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
+	var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+	//  console.log('myMouseMove(pixel coords): xp,yp=\t',xp,',\t',yp);
+  
+	// Convert to Canonical View Volume (CVV) coordinates too:
+  	var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+  						 (canvas.width/2);		// normalize canvas to -1 <= x < +1,
+	var y = (yp - canvas.height/2) /		//									-1 <= y < +1.
+							 (canvas.height/2);
+	//	console.log('myMouseMove(CVV coords  ):  x, y=\t',x,',\t',y);
+
+	// find how far we dragged the mouse:
+	g_xMdragTot += (x - g_xMclik);			// Accumulate change-in-mouse-position,&
+	g_yMdragTot += (y - g_yMclik);
+
+	g_xMclik = x;											// Make next drag-measurement from here.
+	g_yMclik = y;
+	console.log(x, y);
+  })
+  document.addEventListener("mouseup", (ev) => {
+	var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
+	var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
+	var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+	var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+							 (canvas.width/2);			// normalize canvas to -1 <= x < +1,
+	  var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
+							   (canvas.height/2);
+	  console.log('myMouseUp  (CVV coords  ):\n\t x, y=\t',x,',\t',y);
+	  
+	  g_isDrag = false;											// CLEAR our mouse-dragging flag, and
+	  // accumulate any final bit of mouse-dragging we did:
+	  g_xMdragTot += (x - g_xMclik);
+	  g_yMdragTot += (y - g_yMclik);
   })
 
   var mvpMatrix = new Matrix4();
@@ -603,10 +668,8 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
     	//-------Draw Spinning Cylinder:
     modelMatrix.scale(0.2, 0.2, 0.2);
 	modelMatrix.translate(0, 0, 1);
-    						// if you DON'T scale, cyl goes outside the CVV; clipped!
-    //modelMatrix.rotate(currentAngle, 0, 1, 0);  // spin around y axis.
-  	// Drawing:
-    // Pass our current matrix to the vertex shaders:
+	var dist = Math.sqrt(g_xMdragTot*g_xMdragTot + g_yMdragTot*g_yMdragTot);
+	modelMatrix.rotate(dist*120.0, 0.0, -g_yMdragTot+0.0001, -g_xMdragTot+0.0001);
 	pushMatrix(modelMatrix);
 		modelMatrix.scale(.2, .2, 1);
     	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
