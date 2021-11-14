@@ -328,9 +328,10 @@ function initVertexBuffer(gl) {
  	// Make each 3D shape in its own array of vertices:
 	makeCylinder(16, .2, .22, [0.2, 0.2, 0.2], [0.4, 0.7, 0.4], [0.5, 0.5, 1.0]);
 	makeCylinder(4, 1, 1, [.75, .9, .4], [.3, .8, .8], [.1, .9, .67]);
+	makeCoordinateAxes();
   	makeGroundGrid();				// create, fill the gndVerts array
   // how many floats total needed to store all shapes?
-	var mySiz = (gndVerts.length);
+	var mySiz = (axesVerts.length + gndVerts.length);
 	cylVertsMulti.forEach((cylVert) => {
 		mySiz += cylVert.length;
 	})
@@ -348,6 +349,10 @@ function initVertexBuffer(gl) {
 	cylStart1 = i;
 	for(j = 0; j < cylVertsMulti[1].length; i++, j++) {
 		colorShapes[i] = cylVertsMulti[1][j]
+	}
+	axesStart = i;
+	for(j = 0; j < axesVerts.length; i++, j++) {
+		colorShapes[i] = axesVerts[j]
 	}
 	gndStart = i;						// next we'll store the ground-plane;
 	for(j=0; j< gndVerts.length; i++, j++) {
@@ -584,6 +589,16 @@ function makeGroundGrid() {
 	}
 }
 
+function makeCoordinateAxes() {
+	axesVerts = new Float32Array(42);
+	axesVerts = [0, 0, 0, 1, 1, 0, 0,
+				 2, 0, 0, 1, 1, 0, 0,
+				 0, 0, 0, 1, 0, 1, 0,
+				 0, 2, 0, 1, 0, 1, 0,
+				 0, 0, 0, 1, 0, 0, 1,
+				 0, 0, 2, 1, 0, 0, 1]
+}
+
 function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_MvpMatrix) {
 //==============================================================================
   // Clear <canvas>  colors AND the depth buffer
@@ -597,17 +612,20 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
 	eyePosition[1]+Math.sin(-Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180), //y value of look at point
 	eyePosition[2]+Math.sin(Math.PI*tiltAngle/180), //z value look at point
 	0, 0, inverted? -1: 1); //up vector
-gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+	gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+	gl.drawArrays(gl.LINES, axesStart/floatsPerVertex, axesVerts.length/floatsPerVertex);
   //===========================================================
   //
   pushMatrix(modelMatrix);     // SAVE world coord system;
     	//-------Draw Spinning Cylinder:
     modelMatrix.scale(0.2, 0.2, 0.2);
-	modelMatrix.translate(0, 0, 1);
+	modelMatrix.translate(0, 0, 2);
 
 	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);
 
 	modelMatrix.concat(quatMatrix);	
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	gl.drawArrays(gl.LINES, axesStart/floatsPerVertex, axesVerts.length/floatsPerVertex);
 	for(i = 0; i < 10; i++){
 	pushMatrix(modelMatrix);
 		modelMatrix.rotate(90, 1, 0, 0);
@@ -721,6 +739,7 @@ gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
 	eyePosition[2]+Math.sin(Math.PI*tiltAngle/180), //z value look at point
 	0, 0, inverted? -1: 1); //up vector
   gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+  gl.drawArrays(gl.LINES, axesStart/floatsPerVertex, axesVerts.length/floatsPerVertex);
   pushMatrix(modelMatrix);     // SAVE world coord system;
     	//-------Draw Spinning Cylinder:
     modelMatrix.scale(0.2, 0.2, 0.2);
@@ -729,6 +748,8 @@ gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
 	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);
 
 	modelMatrix.concat(quatMatrix);	
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	gl.drawArrays(gl.LINES, axesStart/floatsPerVertex, axesVerts.length/floatsPerVertex);
 	for(i = 0; i < 10; i++){
 	pushMatrix(modelMatrix);
 		modelMatrix.rotate(90, 1, 0, 0);
