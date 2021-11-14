@@ -312,28 +312,8 @@ function main() {
   // Start drawing: create 'tick' variable whose value is this function:
   var tick = function() {
     currentAngle = animate(currentAngle);  // Update the rotation angle
-	gl.viewport(0, 0, canvas.width/2, canvas.height);
-	mvpMatrix.setPerspective(30, 1, 1, 100);
-		mvpMatrix.lookAt(eyePosition[0], eyePosition[1], eyePosition[2], //eye position
-			eyePosition[0]+Math.cos(Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180),  //x value of look at point
-			eyePosition[1]+Math.sin(-Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180), //y value of look at point
-			eyePosition[2]+Math.sin(Math.PI*tiltAngle/180), //z value look at point
-			0, 0, inverted? -1: 1); //up vector
-		gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
-    drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_MvpMatrix);   // Draw shapes
-
-	//orthographic viewport
-	/*
-	gl.viewport(canvas.width/2, 0, canvas.width/2, canvas.height);
-	mvpMatrix.setOrtho(-5, 5, -5, 5, 1, 100);
-	mvpMatrix.lookAt(eyePosition[0], eyePosition[1], eyePosition[2], //eye position
-		eyePosition[0]+Math.cos(Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180),  //x value of look at point
-		eyePosition[1]+Math.sin(-Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180), //y value of look at point
-		eyePosition[2]+Math.sin(Math.PI*tiltAngle/180), //z value look at point
-		0, 0, inverted? -1: 1); //up vector
-	gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
-	drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, "orthographic"); 
-	*/
+	drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_MvpMatrix); 
+	
     requestAnimationFrame(tick, canvas);   
     									// Request that the browser re-draw the webpage
   };
@@ -610,38 +590,15 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
   // Clear <canvas>  colors AND the depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-
-/*
-// STEP 2: add in a 'perspective()' function call here to define 'camera lens':
-  modelMatrix.perspective(	??,   // FOVY: top-to-bottom vertical image angle, in degrees
-                            ??,   // Image Aspect Ratio: camera lens width/height
-                           	??,   // camera z-near distance (always positive; frustum begins at z = -znear)
-                        		??);  // camera z-far distance (always positive; frustum ends at z = -zfar)
-
-*/
-
-/*
-//  STEP 1:
-// Make temporary view matrix that is still close to the origin and
-// won't lose sight of our current CVV contents when used without 
-// a properly-constructed projection matrix.
-//TEMPORARY: 1/10th size camera pose to see what's in CVV locations
-  modelMatrix.lookAt( ??, ??, ??,	// center of projection
-                      ??, ??, ??,	// look-at point 
-                      ??, ??, ??);	// View UP vector.
-*/
-
-/*
-// STEP 3: 
-//Replace the temporary view matrix with your final view matrix...
-// GOAL: camera positioned at 3D point (5,5,3), looking at the 
-//       3D point (-1,-2,-0.5),  using up vector (0,0,1).
-
-  modelMatrix.lookAt( ??, ??, ??,	// center of projection
-                      ??, ??, ??,	// look-at point 
-                      ??, ??, ??);	// View UP vector.
-*/
-
+  var canvas = document.getElementById("webgl");
+  gl.viewport(0, 0, canvas.width/2, canvas.height);
+  mvpMatrix.setPerspective(30, 1, 1, 100);
+  mvpMatrix.lookAt(eyePosition[0], eyePosition[1], eyePosition[2], //eye position
+	eyePosition[0]+Math.cos(Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180),  //x value of look at point
+	eyePosition[1]+Math.sin(-Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180), //y value of look at point
+	eyePosition[2]+Math.sin(Math.PI*tiltAngle/180), //z value look at point
+	0, 0, inverted? -1: 1); //up vector
+gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
   //===========================================================
   //
   pushMatrix(modelMatrix);     // SAVE world coord system;
@@ -754,6 +711,125 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, mvpMatrix, u_M
     						  gndVerts.length/floatsPerVertex);	// draw this many vertices.
   modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
   //===========================================================
+
+  //orthographic view
+  modelMatrix.setIdentity();
+  gl.viewport(canvas.width/2, 0, canvas.width/2, canvas.height);
+  mvpMatrix.setOrtho(-1.65, 1.65, -1.65, 1.65, 1, 100);
+  mvpMatrix.lookAt(eyePosition[0], eyePosition[1], eyePosition[2], //eye position
+	eyePosition[0]+Math.cos(Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180),  //x value of look at point
+	eyePosition[1]+Math.sin(-Math.PI*panAngle/180)*Math.cos(Math.PI*tiltAngle/180), //y value of look at point
+	eyePosition[2]+Math.sin(Math.PI*tiltAngle/180), //z value look at point
+	0, 0, inverted? -1: 1); //up vector
+  gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+  pushMatrix(modelMatrix);     // SAVE world coord system;
+    	//-------Draw Spinning Cylinder:
+    modelMatrix.scale(0.2, 0.2, 0.2);
+	modelMatrix.translate(0, 0, 1);
+
+	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);
+
+	modelMatrix.concat(quatMatrix);	
+	for(i = 0; i < 10; i++){
+	pushMatrix(modelMatrix);
+		modelMatrix.rotate(90, 1, 0, 0);
+		modelMatrix.rotate(currentAngle+(i*36), 0, 1, 0);
+		modelMatrix.translate(0, 0, 1);
+    	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    	// Draw the cylinder's vertices, and no other vertices:
+    	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							cylStart0/floatsPerVertex, // start at this vertex number, and
+    							cylVertsMulti[0].length/floatsPerVertex);	// draw this many vertices.
+		pushMatrix(modelMatrix);
+			modelMatrix.scale(.9, .9, .9);
+			modelMatrix.translate(0, 0, 1);
+			modelMatrix.rotate(-15, 0, 1, 0);
+			modelMatrix.translate(0,0,1);
+			gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    		gl.drawArrays(gl.TRIANGLE_STRIP,				
+    							cylStart0/floatsPerVertex, 
+    							cylVertsMulti[0].length/floatsPerVertex);	
+			pushMatrix(modelMatrix);
+				modelMatrix.scale(.9, .9, .9);
+				modelMatrix.translate(0, 0, 1);
+				modelMatrix.rotate(-15, 0, 1, 0);
+				modelMatrix.translate(0,0,1);
+				gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    			gl.drawArrays(gl.TRIANGLE_STRIP,				
+    							cylStart0/floatsPerVertex, 
+    							cylVertsMulti[0].length/floatsPerVertex);	
+			popMatrix(modelMatrix);
+		modelMatrix = popMatrix();
+	modelMatrix = popMatrix();
+	}
+  modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+  startPositions = [2,3,0, -3,-0,0, -1,-1,0, 5, -1, 0]
+  frequencies = [1, 0.71, 0.83, 2.6]
+  phases = [0, 30, -30, 90];
+  amplitudes = [5, -10, 8, 3]
+  for(i = 0; i < startPositions.length; i+=3) {
+	pushMatrix(modelMatrix);
+		modelMatrix.translate(startPositions[i], startPositions[i+1], startPositions[i+2]);
+		modelMatrix.scale(.1, .1, .1);
+		modelMatrix.translate(-1, 0, 1);
+		modelMatrix.rotate(90, 0, 1, 0);
+		modelMatrix.translate(0, amplitudes[i/3]*Math.cos((boxRotate+phases[i/3])*frequencies[i/3]), amplitudes[i/3]*Math.sin((boxRotate+phases[i/3])*frequencies[i/3]));
+
+		gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+		gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+			cylStart1/floatsPerVertex, // start at this vertex number, and
+			cylVertsMulti[1].length/floatsPerVertex);	// draw this many vertices.
+		
+		pushMatrix(modelMatrix);
+			modelMatrix.scale(.9, .9, .9);
+			modelMatrix.translate(0, 0.2*amplitudes[i/3]*Math.cos((boxRotate+phases[i/3]-10)*frequencies[i/3]), 0.2*amplitudes[i/3]*Math.sin((boxRotate+phases[i/3]-10)*frequencies[i/3]));
+			gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+			gl.drawArrays(gl.TRIANGLE_STRIP,
+				cylStart1/floatsPerVertex,
+				cylVertsMulti[1].length/floatsPerVertex);
+			pushMatrix(modelMatrix);
+				modelMatrix.scale(.9, .9, .9);
+				modelMatrix.translate(0, 0.2*amplitudes[i/3]*Math.cos((boxRotate+phases[i/3]-10)*frequencies[i/3]), 0.2*amplitudes[i/3]*Math.sin((boxRotate+phases[i/3]-10)*frequencies[i/3]));
+				gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+				gl.drawArrays(gl.TRIANGLE_STRIP,
+					cylStart1/floatsPerVertex,
+					cylVertsMulti[1].length/floatsPerVertex);
+				pushMatrix(modelMatrix);
+					modelMatrix.scale(.9, .9, .9);
+					modelMatrix.translate(0, 0.2*amplitudes[i/3]*Math.cos((boxRotate+phases[i/3]-10)*frequencies[i/3]), 0.2*amplitudes[i/3]*Math.sin((boxRotate+phases[i/3]-10)*frequencies[i/3]));
+					gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+					gl.drawArrays(gl.TRIANGLE_STRIP,
+						cylStart1/floatsPerVertex,
+						cylVertsMulti[1].length/floatsPerVertex);
+					pushMatrix(modelMatrix);
+						modelMatrix.scale(.9, .9, .9);
+						modelMatrix.translate(0, 0.2*amplitudes[i/3]*Math.cos((boxRotate+phases[i/3]-10)*frequencies[i/3]), 0.2*amplitudes[i/3]*Math.sin((boxRotate+phases[i/3]-10)*frequencies[i/3]));
+						gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+						gl.drawArrays(gl.TRIANGLE_STRIP,
+							cylStart1/floatsPerVertex,
+							cylVertsMulti[1].length/floatsPerVertex);
+					modelMatrix=popMatrix();
+				modelMatrix=popMatrix();
+			modelMatrix=popMatrix();
+		modelMatrix=popMatrix();
+  	modelMatrix = popMatrix();
+  }
+  //===========================================================
+  pushMatrix(modelMatrix);  // SAVE world drawing coords.
+  	//---------Draw Ground Plane, without spinning.
+  	// position it.
+  	modelMatrix.translate( 0.4, -0.4, 0.0);	
+  	modelMatrix.scale(0.1, 0.1, 0.1);				// shrink by 10X:
+
+  	// Drawing:
+  	// Pass our current matrix to the vertex shaders:
+    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    // Draw just the ground-plane's vertices
+    gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
+    						  gndStart/floatsPerVertex,	// start at this vertex number, and
+    						  gndVerts.length/floatsPerVertex);	// draw this many vertices.
+  modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
 }
 
